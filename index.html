@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTM5hSj0drOJLCyMr4RvesGAxhxA41BTbDU9w&s">
+    <title>Google Maps - Parks in Victoria, BC</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVTqDa3GVHClMAP1uX1BMpD68185NMi-Q&loading=async&libraries=places"></script>
+    <script type="module" src="./script.js"></script>
+  </head>
+
+  <body>
+
+    <h1>Get Outside!</h1>
+    <h2>Parks within 5 km of Victoria BC.</h2>
+    <div class="page">
+      <div class="map-sidebar">
+        <label for="park-radius-slider">Park Search Range: <output id="park-radius">5000</output>km</label>
+        <input type="range" id="park-radius-slider" name="park-radius-slider" min="1000" max="15000" value="5000" step="100">
+        <!-- onchange="searchParks(map, this.value)" -->
+      </div>
+      <div id="map"></div>
+    </div>
+  </body>
+</html>

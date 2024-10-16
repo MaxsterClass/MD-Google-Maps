@@ -1,0 +1,23 @@
+/* Set the size of the map */
+#map {
+  height: 95vh;
+  width: 98%;
+  border-left: dotted thin black;
+}
+
+.page{
+  display: grid;
+  grid-template-columns: 10vw 90vw;
+  border: solid 5px black;
+  background-color: aliceblue;
+}
+
+.map-sidebar{
+  padding-top: 50px;
+  padding-bottom: 50px;
+  text-align: center;
+}
+
+label {
+  font-size: 15px;
+}

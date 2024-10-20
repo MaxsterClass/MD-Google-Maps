@@ -1,32 +1,31 @@
+// ver 10-19 2024
 import { MarkerClusterer } from "https://cdn.skypack.dev/@googlemaps/markerclusterer@2.3.1";
 
 const victoriaBC = { lat: 48.4284, lng: -123.3656 };
 let currentPos = victoriaBC;
-let map, parkRadius, markerCluster;
+let map, parkRadius, markerCluster, slider;
 let markers = [];
-let slider, x;
 
-window.onload = function(){
-  // Create the map
-  // https://developers.google.com/maps/documentation/javascript/add-google-map#div-element
+window.onload = function () {
   map = new google.maps.Map(document.getElementById("map"), {
     center: victoriaBC,
     zoom: 13,
   });
-  parkRadius = document.getElementById("park-radius"); 
+  parkRadius = document.getElementById("park-radius");
   slider = document.getElementById("park-radius-slider");
-  slider.addEventListener("change", function(){searchParks(map, slider.value);});
+  slider.addEventListener("change", function () {
+    searchParks(map, slider.value);
+  });
   initMap();
   searchParks(map, 5000);
-};
+}; // window.onload
 
-// Initialize and add the map
 function initMap() {
-  // Create the DIV to hold the control + the control
   const centerControlDiv = document.createElement("div");
   const controlButton = document.createElement("button");
+  const locationButton = document.createElement("button");
+  const infoWindow = new google.maps.InfoWindow();
 
-  // Set CSS for the control.
   controlButton.style.backgroundColor = "#fff";
   controlButton.style.border = "2px solid #fff";
   controlButton.style.borderTopLeftRadius = "3px";
@@ -43,23 +42,7 @@ function initMap() {
   controlButton.textContent = "Center Map";
   controlButton.title = "Click to re-center the map";
   controlButton.type = "button";
-
-  controlButton.addEventListener("click", () => {
-    map.setCenter(currentPos);
-    map.setZoom(14);
-  });
-
-  // Append the control to the DIV.
-  centerControlDiv.appendChild(controlButton);
-  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(centerControlDiv);
-
-  const infoWindow = new google.maps.InfoWindow();
-
-  const locationButton = document.createElement("button");
   locationButton.textContent = "Pan to Current Location";
-  locationButton.classList.add("custom-map-control-button");
-  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(locationButton);
-  
   locationButton.style.backgroundColor = "#fff";
   locationButton.style.border = "2px solid #fff";
   locationButton.style.borderTopRightRadius = "3px";
@@ -76,6 +59,11 @@ function initMap() {
   locationButton.title = "Click to recenter the map";
   locationButton.type = "button";
 
+  controlButton.addEventListener("click", () => {
+    map.setCenter(currentPos);
+    map.setZoom(14);
+  });
+  
   locationButton.addEventListener("click", () => {
     // Try HTML5 geolocation.
     if (navigator.geolocation) {
@@ -102,13 +90,13 @@ function initMap() {
             icon: svgMarker,
             position: pos,
           });
-        
+
           // Create an info window for each park
           // https://developers.google.com/maps/documentation/javascript/infowindows
           const infoWindow = new google.maps.InfoWindow({
-            content: 'Current Location',
+            content: "Current Location",
           });
-        
+
           // Add event listener to open info window when marker is clicked
           marker.addListener("click", function () {
             infoWindow.open(map, marker);
@@ -117,17 +105,23 @@ function initMap() {
         },
         () => {
           handleLocationError(true, infoWindow, map.getCenter());
-        },
+        }
       );
     } else {
       // Browser doesn't support Geolocation
       handleLocationError(false, infoWindow, map.getCenter());
     }
   });
-  
-  // js map responsiveness
-  window.addEventListener("resize", function(){
-    if(screen.width <= 400){
+
+  locationButton.classList.add("custom-map-control-button");
+  centerControlDiv.appendChild(controlButton);
+  centerControlDiv.appendChild(locationButton);
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(
+    centerControlDiv
+  );
+
+  window.addEventListener("resize", function () {
+    if (screen.width <= 400) {
       locationButton.textContent = "Pan";
       controlButton.textContent = "Center";
     } else {
@@ -135,74 +129,63 @@ function initMap() {
       controlButton.textContent = "Center Map";
     }
   });
-}
+} // initiate map
 
 function handleLocationError(browserHasGeolocation, infoWindow, pos) {
   infoWindow.setPosition(pos);
   infoWindow.setContent(
     browserHasGeolocation
       ? "Error: The Geolocation service failed."
-      : "Error: Your browser doesn't support geolocation.",
+      : "Error: Your browser doesn't support geolocation."
   );
   infoWindow.open(map);
-}
+} // handle location error
 
 function searchParks(map, radius) {
-  for(let marker of markers){
-    marker.setMap(null);
-  }
+  const request = {
+    location: currentPos,
+    radius: radius.toString(),
+    type: ["park"],
+  };
+  const service = new google.maps.places.PlacesService(map);
+
+  for (let marker of markers) marker.setMap(null);
 
   markers = [];
 
-  // Define the request for places
-  const request = {
-    location: currentPos,
-    radius: radius.toString(), // radius
-    type: ["park"],
-  };
-
-  // Create a PlacesService instance
-  const service = new google.maps.places.PlacesService(map);
-
-  // Perform a nearby search (legacy but still ok)
-  // https://developers.google.com/maps/documentation/javascript/places#place_search_requests
   service.nearbySearch(request, function (results, status) {
     if (status === google.maps.places.PlacesServiceStatus.OK) {
-      for (let i = 0; i < results.length; i++) {
-        // Get each park and create a marker for it
-        createMarker(results[i], map);
-      }
+      for (let i = 0; i < results.length; i++) createMarker(results[i], map);
     }
-    markerCluster = new MarkerClusterer({markers, map});
+    markerCluster = new MarkerClusterer({ markers, map });
   });
   parkRadius.textContent = radius;
-}
+} // search parks
 
-// Function to create a marker for a park (Legacy)
-// https://developers.google.com/maps/documentation/javascript/markers
-//  The API recommends using Advanced Marker Elements but it raises the
-//  complexity of the project beyond what we need
-function createMarker(place, map) { 
+function createMarker(place, map) {
   const marker = new google.maps.Marker({
     map: map,
     position: place.geometry.location,
   });
-
-  // Create an info window for each park
-  // https://developers.google.com/maps/documentation/javascript/infowindows
   let infoWindow;
+
   if (place.photos) {
-       infoWindow = new google.maps.InfoWindow({
-          content: `<img src="${place.photos[0].getUrl({maxWidth: 150, maxHeight: 150})}}" style="display:block; margin-left:auto; margin-right:auto;"><h4>${place.name}</h4><p>${place.vicinity}</p>`,
-        });
-      } else {
-        infoWindow = new google.maps.InfoWindow({
-          content: `<h4>${place.name}</h4><p>${place.vicinity}</p>`,
-        });
-      }
-  // Add event listener to open info window when marker is clicked
+    infoWindow = new google.maps.InfoWindow({
+      content: `<img src="${place.photos[0].getUrl({
+        maxWidth: 150,
+        maxHeight: 150,
+      })}}" style="display:block; margin-left:auto; margin-right:auto;"><h4>${
+        place.name
+      }</h4><p>${place.vicinity}</p>`,
+    });
+  } else {
+    infoWindow = new google.maps.InfoWindow({
+      content: `<h4>${place.name}</h4><p>${place.vicinity}</p>`,
+    });
+  }
+  
   marker.addListener("click", function () {
     infoWindow.open(map, marker);
   });
   markers.push(marker);
-}
+} // create marker

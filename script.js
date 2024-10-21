@@ -1,4 +1,4 @@
-// ver 10-19 2024
+// ver 10-21 2024
 import { MarkerClusterer } from "https://cdn.skypack.dev/@googlemaps/markerclusterer@2.3.1";
 
 const victoriaBC = { lat: 48.4284, lng: -123.3656 };

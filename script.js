@@ -3,14 +3,17 @@ import { MarkerClusterer } from "https://cdn.skypack.dev/@googlemaps/markerclust
 
 const victoriaBC = { lat: 48.4284, lng: -123.3656 };
 let currentPos = victoriaBC;
-let map, parkRadius, markerCluster, slider;
+let parkRadius, markerCluster, slider;
 let markers = [];
+
+let map;
 
 window.onload = function () {
   map = new google.maps.Map(document.getElementById("map"), {
     center: victoriaBC,
     zoom: 13,
   });
+  
   parkRadius = document.getElementById("park-radius");
   slider = document.getElementById("park-radius-slider");
   slider.addEventListener("change", function () {
@@ -65,7 +68,6 @@ function initMap() {
   });
   
   locationButton.addEventListener("click", () => {
-    // Try HTML5 geolocation.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -91,8 +93,6 @@ function initMap() {
             position: pos,
           });
 
-          // Create an info window for each park
-          // https://developers.google.com/maps/documentation/javascript/infowindows
           const infoWindow = new google.maps.InfoWindow({
             content: "Current Location",
           });
@@ -116,9 +116,7 @@ function initMap() {
   locationButton.classList.add("custom-map-control-button");
   centerControlDiv.appendChild(controlButton);
   centerControlDiv.appendChild(locationButton);
-  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(
-    centerControlDiv
-  );
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(centerControlDiv);
 
   window.addEventListener("resize", function () {
     if (screen.width <= 400) {
@@ -128,16 +126,28 @@ function initMap() {
       locationButton.textContent = "Pan to Current Location";
       controlButton.textContent = "Center Map";
     }
-  });
+  });  
 } // initiate map
+
+function calculateAndDisplayRoute(directionsService, directionsRenderer, destination) {
+  directionsService.route({
+      origin: {
+        query: currentPos,
+      },
+      destination: {
+        query: destination,
+      },
+      travelMode: google.maps.TravelMode.DRIVING,
+    })
+    .then((response) => {
+      directionsRenderer.setDirections(response);
+    })
+    .catch((e) => window.alert("Directions request failed due to " + status));
+}
 
 function handleLocationError(browserHasGeolocation, infoWindow, pos) {
   infoWindow.setPosition(pos);
-  infoWindow.setContent(
-    browserHasGeolocation
-      ? "Error: The Geolocation service failed."
-      : "Error: Your browser doesn't support geolocation."
-  );
+  infoWindow.setContent(browserHasGeolocation ? "Error: The Geolocation service failed." : "Error: Your browser doesn't support geolocation.");
   infoWindow.open(map);
 } // handle location error
 
@@ -167,22 +177,24 @@ function createMarker(place, map) {
     map: map,
     position: place.geometry.location,
   });
-  let infoWindow;
 
-  if (place.photos) {
-    infoWindow = new google.maps.InfoWindow({
-      content: `<img src="${place.photos[0].getUrl({
-        maxWidth: 150,
-        maxHeight: 150,
-      })}}" style="display:block; margin-left:auto; margin-right:auto;"><h4>${
-        place.name
-      }</h4><p>${place.vicinity}</p>`,
-    });
-  } else {
-    infoWindow = new google.maps.InfoWindow({
-      content: `<h4>${place.name}</h4><p>${place.vicinity}</p>`,
-    });
-  }
+  const rating = place.rating ? place.rating : "No ratings avaliable.";
+  const review = place.user_ratings_total ? place.user_ratings_total : "No reviews avaliable";
+  console.log(review)
+
+  const infoWindow = place.photos ? new google.maps.InfoWindow({
+    content: `<img src="${place.photos[0].getUrl({maxWidth: 150, maxHeight: 150,})}}" style="display:block; margin-left:auto; margin-right:auto;"><h4>${place.name}</h4><p>${place.vicinity}<br>Rating: ${rating}</p>
+      <button id="get-directions" style="border: thin black solid; background-color: lightgray; border-radius: 5px;">Get Directions</button>`,
+  }) : new google.maps.InfoWindow({
+    content: `<h4>${place.name}</h4><p>${place.vicinity}</p><button id="get-directions" style="border: thin black solid; background-color: lightgray; border-radius: 5px;">Get Directions</button>`,
+  });
+
+  // directionsButton.addEventListener("click", function(){
+  //   const directionsService = new google.maps.DirectionsService();
+  //   const directionsRenderer = new google.maps.DirectionsRenderer();
+  //   directionsRenderer.setMap(map);
+  //   calculateAndDisplayRoute(directionsService, directionsRenderer, place.geometry.location);
+  // });
   
   marker.addListener("click", function () {
     infoWindow.open(map, marker);

@@ -3,10 +3,8 @@ import { MarkerClusterer } from "https://cdn.skypack.dev/@googlemaps/markerclust
 
 const victoriaBC = { lat: 48.4284, lng: -123.3656 };
 let currentPos = victoriaBC;
-let parkRadius, markerCluster, slider;
+let map, parkRadius, markerCluster, slider;
 let markers = [];
-
-let map;
 
 window.onload = function () {
   map = new google.maps.Map(document.getElementById("map"), {

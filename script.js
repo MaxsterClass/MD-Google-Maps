@@ -142,8 +142,7 @@ function searchParks(map, radius) {
 
 	service.nearbySearch(request, function (results, status) {
 		if (status === google.maps.places.PlacesServiceStatus.OK) {
-			for (let i = 0; i < results.length; i++) 
-				createMarker(results[i], map);
+			for (let i = 0; i < results.length; i++) createMarker(results[i], map);
 		}
 		markerCluster = new MarkerClusterer({ markers, map });
 	});
@@ -151,24 +150,33 @@ function searchParks(map, radius) {
 } // search parks
 
 function createMarker(place, map) {
+	const service = new google.maps.places.PlacesService(map);
 	const rating = place.rating ? place.rating : "<em>No ratings avaliable.</em>";
-	const review = place.reviews && place.reviews.length > 0 ? place.reviews[0].text : "<em>No reviews avaliable.</em>";
 	const marker = new google.maps.Marker({
 		map: map,
 		position: place.geometry.location,
 	});
-
-	const infoWindow = place.photos ? new google.maps.InfoWindow({
-		content: `<img src="${place.photos[0].getUrl({maxWidth: 150, maxHeight: 150,})}}" style="display:block; margin-left:auto; margin-right:auto;">
-			<h4>${place.name}</h4>
-			<p>${place.vicinity}<br><br>Rating: ${rating}<br><br>${review}</p>
-			<button type="button" class="directionButton" data-lat="${place.geometry.location.lat()}" data-lng="${place.geometry.location.lng()}" style="border-radius: 5px;">Get Directions</button>`,
-	}) : new google.maps.InfoWindow({
-		content: `<p><em>No image avaliable.</em></p><br>
-			<h4>${place.name}</h4>
-			<p>${place.vicinity}<br><br>Rating: ${rating}<br><br>${review}</p>
-			<button type="button" class="directionButton" data-lat="${place.geometry.location.lat()}" data-lng="${place.geometry.location.lng()}" style="border-radius: 5px;">Get Directions</button>`,
-	});
+	const request = {
+		placeId: place.place_id,
+	}
+	let review, reviewAuthor, infoWindow;
+	service.getDetails(request, function(place, status){
+		if(status === google.maps.places.PlacesServiceStatus.OK){
+			review = place.reviews && place.reviews.length > 0 ? place.reviews[0].text : "<em>No reviews avaliable.</em>";
+			reviewAuthor = place.reviews && place.reviews.length > 0 ? place.reviews[0].author_name : "<em> - </em>";
+			infoWindow = place.photos ? new google.maps.InfoWindow({
+				content: `<img src="${place.photos[0].getUrl({maxWidth: 150, maxHeight: 150,})}}" style="display:block; margin-left:auto; margin-right:auto;">
+					<h4>${place.name}</h4>
+					<p>${place.vicinity}<br><br>Rating: ${rating}<br><br>Review (By ${reviewAuthor}):<br>${review}</p>
+					<button type="button" class="directionButton" data-lat="${place.geometry.location.lat()}" data-lng="${place.geometry.location.lng()}" style="border-radius: 5px;">Get Directions</button>`,
+			}) : new google.maps.InfoWindow({
+				content: `<p><em>No image avaliable.</em></p><br>
+					<h4>${place.name}</h4>
+					<p>${place.vicinity}<br><br>Rating: ${rating}<br><br>Review (By ${reviewAuthor}):<br>${review}</p>
+					<button type="button" class="directionButton" data-lat="${place.geometry.location.lat()}" data-lng="${place.geometry.location.lng()}" style="border-radius: 5px;">Get Directions</button>`,
+			});
+		}
+	})
 	
 	marker.addListener("click", function () {
 		infoWindow.open(map, marker);

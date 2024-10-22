@@ -3,7 +3,7 @@ import { MarkerClusterer } from "https://cdn.skypack.dev/@googlemaps/markerclust
 
 const victoriaBC = { lat: 48.4284, lng: -123.3656 };
 let currentPos = victoriaBC, markers = [];
-let map, markerCluster;
+let map, markerCluster, parkRadius;
 
 window.onload = initMap();
 
@@ -17,10 +17,10 @@ function initMap() {
 	const controlButton = document.createElement("button");
 	const infoWindow = new google.maps.InfoWindow();
 	const directionsService = new google.maps.DirectionsService();
-	const directionsRenderer = new google.maps.DirectionsRenderer();	
-	let parkRadius = document.getElementById("park-radius");
+	const directionsRenderer = new google.maps.DirectionsRenderer();
 	let slider = document.getElementById("park-radius-slider");
 
+	parkRadius = document.getElementById("park-radius");
 	directionsRenderer.setMap(map);
 
 	document.getElementById("map").addEventListener("click", function (event) {
@@ -112,7 +112,7 @@ function initMap() {
 			controlButton.textContent = "Center Map";
 		}
   	});
-	searchParks(map, 5000, parkRadius);
+	searchParks(map, 5000);
 } // initiate map
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer, destination) {
@@ -129,7 +129,7 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos) {
 	infoWindow.open(map);
 } // handle location error
 
-function searchParks(map, radius, parkRadius) {
+function searchParks(map, radius) {
 	const service = new google.maps.places.PlacesService(map);
 	const request = {
 		location: currentPos,
@@ -142,7 +142,8 @@ function searchParks(map, radius, parkRadius) {
 
 	service.nearbySearch(request, function (results, status) {
 		if (status === google.maps.places.PlacesServiceStatus.OK) {
-			for (let i = 0; i < results.length; i++) createMarker(results[i], map);
+			for (let i = 0; i < results.length; i++) 
+				createMarker(results[i], map);
 		}
 		markerCluster = new MarkerClusterer({ markers, map });
 	});
@@ -151,12 +152,11 @@ function searchParks(map, radius, parkRadius) {
 
 function createMarker(place, map) {
 	const rating = place.rating ? place.rating : "<em>No ratings avaliable.</em>";
-	const review = place.reviews ? place.reviews : "<em>No reviews avaliable.</em>";
+	const review = place.reviews && place.reviews.length > 0 ? place.reviews[0].text : "<em>No reviews avaliable.</em>";
 	const marker = new google.maps.Marker({
 		map: map,
 		position: place.geometry.location,
 	});
-	console.log(review)
 
 	const infoWindow = place.photos ? new google.maps.InfoWindow({
 		content: `<img src="${place.photos[0].getUrl({maxWidth: 150, maxHeight: 150,})}}" style="display:block; margin-left:auto; margin-right:auto;">
@@ -176,6 +176,7 @@ function createMarker(place, map) {
 	markers.push(marker);
 } // create marker
 
+// service worker stuff --------------------------------------
 if ('serviceWorker' in navigator) {
 	window.addEventListener('load', function() {
 		navigator.serviceWorker.register('/sw.js').then(function(registration) {
